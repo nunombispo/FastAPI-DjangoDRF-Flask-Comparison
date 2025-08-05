@@ -1,0 +1,50 @@
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: pg-benchmark
+    restart: always
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  fastapi:
+    build:
+      context: ./fastapi_app
+    container_name: fastapi-app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://testuser:testpass@postgres/testdb
+
+  flask:
+    build:
+      context: ./flask_app
+    container_name: flask-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://testuser:testpass@postgres/testdb
+
+  drf:
+    build:
+      context: ./drf_app
+    container_name: drf-app
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://testuser:testpass@postgres/testdb
+
+volumes:
+  pgdata:
