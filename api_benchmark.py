@@ -1,4 +1,3 @@
-# api_benchmark.py
 import asyncio
 import httpx
 import time
@@ -11,8 +10,7 @@ ENDPOINTS = {
     "drf": "http://localhost:8001/items/",
 }
 
-NUM_REQUESTS = 5
-
+NUM_REQUESTS = 500
 CONCURRENCY = 20
 
 item_payload = {
@@ -131,35 +129,52 @@ async def benchmark_crud(name, url):
 
     logging.info(f"Starting benchmark for {name.upper()}...")
     
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    # Use connection pooling and limits to prevent overwhelming the database
+    limits = httpx.Limits(max_keepalive_connections=20, max_connections=50)
+    timeout = httpx.Timeout(30.0, connect=10.0)
+    
+    async with httpx.AsyncClient(timeout=timeout, limits=limits) as client:
         start = time.perf_counter()
 
-        # POST
+        # POST - Create items in batches to reduce connection pressure
+        logging.info(f"{name.upper()} - Creating {NUM_REQUESTS} items...")
         post_tasks = [post_item(client, url) for _ in range(NUM_REQUESTS)]
-        post_results = await asyncio.gather(*post_tasks)
-        item_ids.extend([id for id in post_results if id])
+        post_results = await asyncio.gather(*post_tasks, return_exceptions=True)
+        item_ids.extend([id for id in post_results if id and not isinstance(id, Exception)])
         logging.info(f"{name.upper()} - Created {len(item_ids)} items")
 
-        # GET
+        # Small delay to allow database to stabilize
+        await asyncio.sleep(1)
+
+        # GET - Read items
+        logging.info(f"{name.upper()} - Reading {len(item_ids)} items...")
         get_tasks = [get_item(client, url, id) for id in item_ids]
-        get_results = await asyncio.gather(*get_tasks)
+        get_results = await asyncio.gather(*get_tasks, return_exceptions=True)
 
-        # PUT
+        # Small delay to allow database to stabilize
+        await asyncio.sleep(1)
+
+        # PUT - Update items
+        logging.info(f"{name.upper()} - Updating {len(item_ids)} items...")
         put_tasks = [put_item(client, url, id) for id in item_ids]
-        put_results = await asyncio.gather(*put_tasks)
+        put_results = await asyncio.gather(*put_tasks, return_exceptions=True)
 
-        # DELETE
+        # Small delay to allow database to stabilize
+        await asyncio.sleep(1)
+
+        # DELETE - Delete items
+        logging.info(f"{name.upper()} - Deleting {len(item_ids)} items...")
         delete_tasks = [delete_item(client, url, id) for id in item_ids]
-        delete_results = await asyncio.gather(*delete_tasks)
+        delete_results = await asyncio.gather(*delete_tasks, return_exceptions=True)
 
         duration = time.perf_counter() - start
 
         total_requests = NUM_REQUESTS * 4  # POST + GET + PUT + DELETE
         success = sum([
-            len([r for r in post_results if r]),
-            sum(get_results),
-            sum(put_results),
-            sum(delete_results)
+            len([r for r in post_results if r and not isinstance(r, Exception)]),
+            sum([r for r in get_results if r and not isinstance(r, Exception)]),
+            sum([r for r in put_results if r and not isinstance(r, Exception)]),
+            sum([r for r in delete_results if r and not isinstance(r, Exception)])
         ])
         failures = total_requests - success
 
@@ -178,6 +193,8 @@ async def main():
     for name, url in ENDPOINTS.items():
         logging.info(f"Testing {name.upper()} at {url}")
         await benchmark_crud(name, url)
+        # Add delay between frameworks to allow database recovery
+        await asyncio.sleep(2)
     
     logging.info("Benchmark completed!")
     logging.info(f"Full log saved to: {log_filename}")

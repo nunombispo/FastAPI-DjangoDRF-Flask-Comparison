@@ -1,10 +1,17 @@
 from flask import Flask, request, jsonify, abort
 from models import Item
-from database import db, DATABASE_URL
+from database import db, DATABASE_URL, engine
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 20,
+    'max_overflow': 30,
+    'pool_pre_ping': True,
+    'pool_recycle': 3600,
+    'pool_timeout': 60
+}
 
 db.init_app(app)
 

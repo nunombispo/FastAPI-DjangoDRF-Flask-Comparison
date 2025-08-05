@@ -1,6 +1,6 @@
 # FastAPI vs Django REST Framework vs Flask Comparison
 
-A comprehensive comparison of three popular Python web frameworks: **FastAPI**, **Django REST Framework (DRF)**, and **Flask**. This project includes production-ready Docker configurations and a benchmarking script to test CRUD operations across all three frameworks.
+A comprehensive comparison of three popular Python web frameworks: **FastAPI**, **Django REST Framework (DRF)**, and **Flask**. This project includes production-ready Docker configurations with separate PostgreSQL instances for each application and a benchmarking script to test CRUD operations across all three frameworks.
 
 ## 🏗️ Project Structure
 
@@ -180,15 +180,23 @@ The `api_benchmark.py` script performs comprehensive CRUD operations testing:
 
 ## 🐳 Docker Configuration
 
-### Database Setup
+### Database Architecture
 
-Each API has its own dedicated database:
+Each API has its own dedicated PostgreSQL instance for complete isolation:
 
-- **FastAPI**: `testdb_fastapi`
-- **Flask**: `testdb_flask`
-- **DRF**: `testdb_drf`
+| Application | Database Container | Database Name    | External Port | Internal Port |
+| ----------- | ------------------ | ---------------- | ------------- | ------------- |
+| **FastAPI** | `pg-fastapi`       | `testdb_fastapi` | `5432`        | `5432`        |
+| **Flask**   | `pg-flask`         | `testdb_flask`   | `5433`        | `5432`        |
+| **DRF**     | `pg-drf`           | `testdb_drf`     | `5434`        | `5432`        |
 
-The databases are automatically created when the PostgreSQL container starts up using the `init-db.sql` script.
+### Benefits of Separate Databases
+
+- **Complete Isolation**: Each application has its own database instance
+- **Independent Scaling**: Each database can be scaled independently
+- **No Shared Dependencies**: Issues with one database won't affect others
+- **Better Performance**: No resource contention between applications
+- **Easier Debugging**: Isolated issues and easier troubleshooting
 
 ### Production-Ready Features
 
@@ -199,13 +207,28 @@ All Dockerfiles include:
 - **Performance**: Optimized layer caching
 - **Health Checks**: Application-specific endpoints
 - **Environment**: Production-ready settings
+- **Database Waiting**: Applications wait for their respective databases to be ready
 
 ### Docker Compose Services
 
+- **postgres-fastapi**: PostgreSQL instance for FastAPI (port 5432)
+- **postgres-flask**: PostgreSQL instance for Flask (port 5433)
+- **postgres-drf**: PostgreSQL instance for DRF (port 5434)
 - **fastapi**: FastAPI application on port 8000
 - **flask**: Flask application on port 5000
 - **drf**: Django REST Framework on port 8001
-- **postgres**: PostgreSQL database with separate databases for each API
+
+### Health Checks and Dependencies
+
+Each application waits for its respective database to be healthy before starting:
+
+```yaml
+depends_on:
+  postgres-fastapi:
+    condition: service_healthy
+```
+
+This ensures proper startup order and prevents connection errors.
 
 ## 🔍 Key Differences
 
@@ -239,6 +262,15 @@ All Dockerfiles include:
 curl http://localhost:8000/items/  # FastAPI
 curl http://localhost:5000/items/  # Flask
 curl http://localhost:8001/items/  # DRF
+```
+
+### Database Access
+
+```bash
+# Connect to individual databases
+psql -h localhost -p 5432 -U testuser -d testdb_fastapi  # FastAPI DB
+psql -h localhost -p 5433 -U testuser -d testdb_flask    # Flask DB
+psql -h localhost -p 5434 -U testuser -d testdb_drf      # DRF DB
 ```
 
 ## 📝 Logging
