@@ -7,6 +7,9 @@ A comprehensive comparison of three popular Python web frameworks: **FastAPI**, 
 ```
 FastAPI-DjangoDRF-Flask-Comparison/
 ├── api_benchmark.py          # High-performance benchmark script
+├── locustfile.py             # Locust load testing scenarios
+├── run_locust_tests.py       # Automated Locust test runner
+├── requirements-locust.txt    # Locust dependencies
 ├── docker-compose.yml        # Docker Compose configuration
 ├── fastapi_app/             # FastAPI application
 │   ├── Dockerfile           # Production Dockerfile
@@ -189,6 +192,163 @@ The `api_benchmark.py` script performs comprehensive CRUD operations testing wit
 2025-08-05 15:11:27,345 - INFO -   Success: 2000/2000
 2025-08-05 15:11:27,346 - INFO -   Failures: 0
 2025-08-05 15:11:27,347 - INFO -   RPS: 813.01
+```
+
+## 🐛 Locust Load Testing
+
+In addition to the custom benchmark script, this project includes comprehensive Locust load testing for realistic user scenarios.
+
+### Features
+
+- **Realistic User Behavior**: Simulates actual user interactions with random data
+- **CRUD Operations**: Tests all Create, Read, Update, Delete operations
+- **Multiple User Classes**: Dedicated test classes for each framework
+- **Comprehensive Metrics**: Response times, failure rates, throughput
+- **HTML Reports**: Detailed visual reports with charts and statistics
+- **CSV Export**: Raw data export for further analysis
+
+### Installation
+
+```bash
+# Install Locust
+pip install -r requirements-locust.txt
+
+# Or install directly
+pip install locust==2.17.0
+```
+
+### Running Locust Tests
+
+#### Quick Start
+
+```bash
+# Run automated test suite
+python run_locust_tests.py
+```
+
+#### Manual Testing
+
+```bash
+# Start Locust web interface
+locust --host http://localhost:8000 --locustfile locustfile.py
+
+# Run headless test for FastAPI
+locust --host http://localhost:8000 --users 50 --spawn-rate 5 --run-time 60s --headless --html results.html
+
+# Run headless test for Flask
+locust --host http://localhost:5000 --users 50 --spawn-rate 5 --run-time 60s --headless --html results.html
+
+# Run headless test for DRF
+locust --host http://localhost:8001 --users 50 --spawn-rate 5 --run-time 60s --headless --html results.html
+```
+
+### Test Scenarios
+
+The Locust test suite includes:
+
+#### **APIUser Class** (Mixed API Testing)
+
+- **Random API Selection**: Tests all three APIs randomly
+- **Realistic Workload**: 3:2:2:1 ratio for GET:POST:PUT:DELETE operations
+- **Dynamic Data**: Random item names, prices, and descriptions
+- **Error Handling**: Graceful handling of 404s and invalid responses
+
+#### **Framework-Specific Classes**
+
+- **FastAPIUser**: Dedicated FastAPI testing
+- **FlaskUser**: Dedicated Flask testing
+- **DRFUser**: Dedicated DRF testing
+
+### Test Operations
+
+| Operation       | Weight | Description                                |
+| --------------- | ------ | ------------------------------------------ |
+| **List Items**  | 3      | GET `/items/` - Most common operation      |
+| **Create Item** | 2      | POST `/items/` - Add new items             |
+| **Get Item**    | 2      | GET `/items/{id}` - Retrieve specific item |
+| **Update Item** | 1      | PUT `/items/{id}` - Modify existing item   |
+| **Delete Item** | 1      | DELETE `/items/{id}` - Remove item         |
+
+### Sample Locust Output
+
+```
+🚀 Starting Locust Load Testing Suite
+📅 2025-08-05 15:30:00
+
+============================================================
+Starting Locust test for FASTAPI
+Host: http://localhost:8000
+Users: 50
+Spawn Rate: 5 users/second
+Run Time: 60 seconds
+============================================================
+
+✅ FASTAPI test completed successfully
+📊 Results saved to: locust_results/fastapi_load_test_20250805_153000
+```
+
+### Results Analysis
+
+Locust generates comprehensive reports including:
+
+- **Response Time Statistics**: Min, max, median, 95th percentile
+- **Request Rate**: Requests per second
+- **Failure Rate**: Percentage of failed requests
+- **User Count**: Concurrent users over time
+- **Response Time Distribution**: Histogram of response times
+
+### Configuration
+
+#### Test Parameters
+
+```python
+# run_locust_tests.py
+test_configs = [
+    {
+        "name": "FastAPI",
+        "host": "http://localhost:8000",
+        "users": 50,           # Number of concurrent users
+        "spawn_rate": 5,       # Users spawned per second
+        "run_time": 60         # Test duration in seconds
+    }
+]
+```
+
+#### Custom Scenarios
+
+```python
+# locustfile.py
+@task(3)  # Weight for this task
+def list_items(self):
+    # Custom test logic
+    pass
+```
+
+### Advanced Usage
+
+#### Stress Testing
+
+```bash
+# High load test
+locust --host http://localhost:8000 --users 200 --spawn-rate 10 --run-time 300s --headless
+```
+
+#### Web Interface
+
+```bash
+# Start web UI for interactive testing
+locust --host http://localhost:8000 --locustfile locustfile.py
+# Then open http://localhost:8089
+```
+
+#### Custom User Classes
+
+```python
+# Test specific framework
+class FastAPIUser(APIUser):
+    def on_start(self):
+        self.current_api = "fastapi"
+        self.base_url = "http://localhost:8000"
 ```
 
 ## 🐳 Docker Configuration
