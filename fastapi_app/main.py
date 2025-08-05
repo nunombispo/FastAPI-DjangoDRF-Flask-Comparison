@@ -23,15 +23,21 @@ class ItemSchema(BaseModel):
     in_stock: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 @app.post("/items/", response_model=ItemSchema)
 def create_item(item: ItemSchema, db: Session = Depends(get_db)):
-    db_item = models.Item(**item.dict())
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
+    try:
+        # Exclude id from the data since it's auto-generated
+        item_data = item.dict(exclude={'id'})
+        db_item = models.Item(**item_data)
+        db.add(db_item)
+        db.commit()
+        db.refresh(db_item)
+        return db_item
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @app.get("/items/", response_model=List[ItemSchema])
 def list_items(db: Session = Depends(get_db)):

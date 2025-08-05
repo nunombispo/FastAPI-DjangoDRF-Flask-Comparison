@@ -1,17 +1,61 @@
 
 services:
-  postgres:
+  postgres-fastapi:
     image: postgres:15
-    container_name: pg-benchmark
+    container_name: pg-fastapi
     restart: always
     environment:
-      POSTGRES_DB: testdb
+      POSTGRES_DB: testdb_fastapi
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: testpass
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_fastapi:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb_fastapi"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  postgres-flask:
+    image: postgres:15
+    container_name: pg-flask
+    restart: always
+    environment:
+      POSTGRES_DB: testdb_flask
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_flask:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb_flask"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  postgres-drf:
+    image: postgres:15
+    container_name: pg-drf
+    restart: always
+    environment:
+      POSTGRES_DB: testdb_drf
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata_drf:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb_drf"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   fastapi:
     build:
@@ -20,9 +64,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres-fastapi:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://testuser:testpass@postgres/testdb
+      - DATABASE_URL=postgresql://testuser:testpass@postgres-fastapi/testdb_fastapi
 
   flask:
     build:
@@ -31,9 +76,10 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
+      postgres-flask:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://testuser:testpass@postgres/testdb
+      - DATABASE_URL=postgresql://testuser:testpass@postgres-flask/testdb_flask
 
   drf:
     build:
@@ -42,9 +88,12 @@ services:
     ports:
       - "8001:8000"
     depends_on:
-      - postgres
+      postgres-drf:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://testuser:testpass@postgres/testdb
+      - DATABASE_URL=postgresql://testuser:testpass@postgres-drf/testdb_drf
 
 volumes:
-  pgdata:
+  pgdata_fastapi:
+  pgdata_flask:
+  pgdata_drf:

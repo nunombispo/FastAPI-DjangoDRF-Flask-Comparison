@@ -159,7 +159,7 @@ The `api_benchmark.py` script performs comprehensive CRUD operations testing:
 
 - **Operations**: POST (create), GET (read), PUT (update), DELETE (delete)
 - **Concurrency**: 20 concurrent requests
-- **Requests per test**: 5 items per framework
+- **Requests per test**: 500 items per framework
 - **Metrics**: Duration, success rate, failures, requests per second (RPS)
 
 ### Sample Output
@@ -180,6 +180,16 @@ The `api_benchmark.py` script performs comprehensive CRUD operations testing:
 
 ## 🐳 Docker Configuration
 
+### Database Setup
+
+Each API has its own dedicated database:
+
+- **FastAPI**: `testdb_fastapi`
+- **Flask**: `testdb_flask`
+- **DRF**: `testdb_drf`
+
+The databases are automatically created when the PostgreSQL container starts up using the `init-db.sql` script.
+
 ### Production-Ready Features
 
 All Dockerfiles include:
@@ -195,7 +205,7 @@ All Dockerfiles include:
 - **fastapi**: FastAPI application on port 8000
 - **flask**: Flask application on port 5000
 - **drf**: Django REST Framework on port 8001
-- **postgres**: PostgreSQL database (shared)
+- **postgres**: PostgreSQL database with separate databases for each API
 
 ## 🔍 Key Differences
 
