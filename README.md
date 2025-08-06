@@ -2,6 +2,8 @@
 
 A comprehensive comparison of three popular Python web frameworks: **FastAPI**, **Django REST Framework (DRF)**, and **Flask**. This project includes production-ready Docker configurations with separate PostgreSQL instances for each application, optimized database connection pools for high-load benchmarking, comprehensive Locust load testing, and a benchmarking script to test CRUD operations across all three frameworks.
 
+If this script was useful to you, consider donating to support the Developer Service Blog: https://buy.stripe.com/bIYdTrggi5lZamkdQW
+
 ## 🏗️ Project Structure
 
 ```
@@ -275,7 +277,6 @@ Locust generates comprehensive reports including:
 - **Failure Rate**: Percentage of failed requests
 - **User Count**: Concurrent users over time
 - **Response Time Distribution**: Histogram of response times
-
 
 ## 🐳 Docker Configuration
 
