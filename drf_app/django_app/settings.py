@@ -80,11 +80,6 @@ DATABASES = {
     'default': dj_database_url.config(
         conn_max_age=600,
         conn_health_checks=True,
-        # Additional connection pool settings for high load
-        OPTIONS={
-            'MAX_CONNS': 20,  # Maximum connections
-            'CONN_MAX_AGE': 600,  # Connection lifetime in seconds
-        }
     ),
 }
 
