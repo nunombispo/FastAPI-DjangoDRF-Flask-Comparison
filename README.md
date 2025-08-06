@@ -1,6 +1,6 @@
 # FastAPI vs Django REST Framework vs Flask Comparison
 
-A comprehensive comparison of three popular Python web frameworks: **FastAPI**, **Django REST Framework (DRF)**, and **Flask**. This project includes production-ready Docker configurations with separate PostgreSQL instances for each application, optimized database connection pools for high-load benchmarking, and a comprehensive benchmarking script to test CRUD operations across all three frameworks.
+A comprehensive comparison of three popular Python web frameworks: **FastAPI**, **Django REST Framework (DRF)**, and **Flask**. This project includes production-ready Docker configurations with separate PostgreSQL instances for each application, optimized database connection pools for high-load benchmarking, comprehensive Locust load testing, and a benchmarking script to test CRUD operations across all three frameworks.
 
 ## 🏗️ Project Structure
 
@@ -9,7 +9,6 @@ FastAPI-DjangoDRF-Flask-Comparison/
 ├── api_benchmark.py          # High-performance benchmark script
 ├── locustfile.py             # Locust load testing scenarios
 ├── run_locust_tests.py       # Automated Locust test runner
-├── requirements-locust.txt    # Locust dependencies
 ├── docker-compose.yml        # Docker Compose configuration
 ├── fastapi_app/             # FastAPI application
 │   ├── Dockerfile           # Production Dockerfile
@@ -47,7 +46,7 @@ FastAPI-DjangoDRF-Flask-Comparison/
 1. **Clone the repository:**
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/nunombispo/FastAPI-DjangoDRF-Flask-Comparison
    cd FastAPI-DjangoDRF-Flask-Comparison
    ```
 
@@ -58,8 +57,14 @@ FastAPI-DjangoDRF-Flask-Comparison/
    ```
 
 3. **Run the benchmark:**
+
    ```bash
    python api_benchmark.py
+   ```
+
+4. **Run Locust load tests:**
+   ```bash
+   python run_locust_tests.py
    ```
 
 ### Manual Setup (Local Development)
@@ -207,16 +212,6 @@ In addition to the custom benchmark script, this project includes comprehensive 
 - **HTML Reports**: Detailed visual reports with charts and statistics
 - **CSV Export**: Raw data export for further analysis
 
-### Installation
-
-```bash
-# Install Locust
-pip install -r requirements-locust.txt
-
-# Or install directly
-pip install locust==2.17.0
-```
-
 ### Running Locust Tests
 
 #### Quick Start
@@ -224,22 +219,6 @@ pip install locust==2.17.0
 ```bash
 # Run automated test suite
 python run_locust_tests.py
-```
-
-#### Manual Testing
-
-```bash
-# Start Locust web interface
-locust --host http://localhost:8000 --locustfile locustfile.py
-
-# Run headless test for FastAPI
-locust --host http://localhost:8000 --users 50 --spawn-rate 5 --run-time 60s --headless --html results.html
-
-# Run headless test for Flask
-locust --host http://localhost:5000 --users 50 --spawn-rate 5 --run-time 60s --headless --html results.html
-
-# Run headless test for DRF
-locust --host http://localhost:8001 --users 50 --spawn-rate 5 --run-time 60s --headless --html results.html
 ```
 
 ### Test Scenarios
@@ -297,59 +276,6 @@ Locust generates comprehensive reports including:
 - **User Count**: Concurrent users over time
 - **Response Time Distribution**: Histogram of response times
 
-### Configuration
-
-#### Test Parameters
-
-```python
-# run_locust_tests.py
-test_configs = [
-    {
-        "name": "FastAPI",
-        "host": "http://localhost:8000",
-        "users": 50,           # Number of concurrent users
-        "spawn_rate": 5,       # Users spawned per second
-        "run_time": 60         # Test duration in seconds
-    }
-]
-```
-
-#### Custom Scenarios
-
-```python
-# locustfile.py
-@task(3)  # Weight for this task
-def list_items(self):
-    # Custom test logic
-    pass
-```
-
-### Advanced Usage
-
-#### Stress Testing
-
-```bash
-# High load test
-locust --host http://localhost:8000 --users 200 --spawn-rate 10 --run-time 300s --headless
-```
-
-#### Web Interface
-
-```bash
-# Start web UI for interactive testing
-locust --host http://localhost:8000 --locustfile locustfile.py
-# Then open http://localhost:8089
-```
-
-#### Custom User Classes
-
-```python
-# Test specific framework
-class FastAPIUser(APIUser):
-    def on_start(self):
-        self.current_api = "fastapi"
-        self.base_url = "http://localhost:8000"
-```
 
 ## 🐳 Docker Configuration
 
@@ -371,30 +297,6 @@ Each API has its own dedicated PostgreSQL instance for complete isolation:
 - **Better Performance**: No resource contention between applications
 - **Easier Debugging**: Isolated issues and easier troubleshooting
 
-### Database Connection Optimization
-
-All applications use optimized database connection pools for high-load scenarios:
-
-#### FastAPI & Flask (SQLAlchemy)
-
-```python
-# Connection pool settings
-pool_size=20,           # Increased from default 5
-max_overflow=30,        # Increased from default 10
-pool_pre_ping=True,     # Verify connections before use
-pool_recycle=3600,      # Recycle connections every hour
-pool_timeout=60         # Increased timeout
-```
-
-#### Django (Django ORM)
-
-```python
-# Connection settings
-MAX_CONNS=20,           # Maximum connections
-CONN_MAX_AGE=600,       # Connection lifetime in seconds
-conn_health_checks=True  # Health check connections
-```
-
 ### Production-Ready Features
 
 All Dockerfiles include:
@@ -415,18 +317,6 @@ All Dockerfiles include:
 - **fastapi**: FastAPI application on port 8000
 - **flask**: Flask application on port 5000
 - **drf**: Django REST Framework on port 8001
-
-### Health Checks and Dependencies
-
-Each application waits for its respective database to be healthy before starting:
-
-```yaml
-depends_on:
-  postgres-fastapi:
-    condition: service_healthy
-```
-
-This ensures proper startup order and prevents connection errors.
 
 ## 🔍 Key Differences
 
@@ -480,15 +370,6 @@ psql -h localhost -p 5434 -U testuser -d testdb_drf      # DRF DB
 # api_benchmark.py
 NUM_REQUESTS = 500    # Number of items to create per framework
 CONCURRENCY = 20      # Concurrent requests
-```
-
-#### Connection Pool Tuning
-
-```python
-# For higher load, increase these values:
-pool_size=30,         # More base connections
-max_overflow=50,      # More overflow connections
-pool_timeout=120      # Longer timeout
 ```
 
 ## 📝 Logging
